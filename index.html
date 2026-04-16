@@ -21,16 +21,19 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:'DM Sa
 .screen.active{display:flex}
 
 /* ── HOME ── */
-#s-home{background:var(--bg);align-items:center;justify-content:center;padding:32px 24px}
-.home-logo{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+#s-home{background:var(--bg);align-items:center;justify-content:flex-start;padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.home-inner{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;padding:32px 24px 48px;margin:0 auto}
+.home-top-bar{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.home-logo{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase}
+.home-gear{background:none;border:none;font-size:24px;cursor:pointer;padding:4px;line-height:1}
 .home-title{font-size:32px;font-weight:600;color:var(--white);text-align:center;margin-bottom:8px;line-height:1.15}
-.home-sub{font-size:15px;color:var(--muted);text-align:center;margin-bottom:48px;line-height:1.5}
-.home-fields{width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.home-sub{font-size:15px;color:var(--muted);text-align:center;margin-bottom:32px;line-height:1.5}
+.home-fields{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
 .field-group{display:flex;flex-direction:column;gap:6px}
 .field-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace}
 .field-input{background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:16px;padding:14px 16px;outline:none;width:100%}
 .field-input:focus{border-color:var(--gold)}
-.btn-start{background:var(--gold);border:none;border-radius:14px;color:var(--bg);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;padding:18px;width:100%;max-width:400px;cursor:pointer}
+.btn-start{background:var(--gold);border:none;border-radius:14px;color:var(--bg);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;padding:18px;width:100%;cursor:pointer}
 
 /* ── CHAT AGENT ── */
 #s-agent{background:var(--bg)}
@@ -149,8 +152,11 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:'DM Sa
      HOME — Customer Info
 ═══════════════════════════════ -->
 <div class="screen active" id="s-home">
-  <div style="width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center">
-    <div class="home-logo">M&P Carpentry</div>
+  <div class="home-inner">
+    <div class="home-top-bar">
+      <div class="home-logo">M&P // FieldQuote</div>
+      <button class="home-gear" onclick="showSettings()">⚙️</button>
+    </div>
     <div class="home-title">Pella<br>Quoting Agent</div>
     <div class="home-sub">Voice-driven window &amp; door configurator with live trade pricing</div>
     <div class="home-fields">
@@ -182,7 +188,6 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:'DM Sa
       </div>
     </div>
     <button class="btn-start" onclick="startSession()">Start Quoting →</button>
-    <div style="margin-top:16px"><span class="settings-gear" onclick="showSettings()" style="font-size:22px">⚙️ Settings</span></div>
   </div>
 </div>
 
