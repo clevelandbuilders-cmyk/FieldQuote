@@ -1070,16 +1070,8 @@ function showAgent() { showScreen('s-agent'); }
 let settingsOrigin = 's-home'; // track where we came from
 
 function showSettings() {
-  // Remember which screen we came from
   const active = document.querySelector('.screen.active');
   settingsOrigin = active ? active.id : 's-home';
-
-  // Load current cookie into textarea
-  const stored = localStorage.getItem('pella_cookie');
-  const cookieInput = document.getElementById('cookie-input');
-  cookieInput.value = stored || PELLA_COOKIE;
-
-  // Show current status
   updateCookieStatus();
   showScreen('s-settings');
 }
@@ -1089,16 +1081,12 @@ function settingsBack() {
 }
 
 function saveCookie() {
-  const val = document.getElementById('cookie-input').value.trim();
-  if (!val) { showToast('Paste a cookie string first', true); return; }
-  if (!val.includes('PELLAPRODUCT') && !val.includes('pella')) {
-    showToast('That doesn\'t look like a Pella cookie — double-check', true); return;
-  }
-  localStorage.setItem('pella_cookie', val);
-  // Update the live variable
-  window.activeCookie = val;
-  updateCookieStatus(true);
-  showToast('Cookie saved — live pricing active');
+  showToast('Cookie is managed in Cloudflare Worker — see instructions below');
+}
+
+function updateCookieStatus() {
+  // Cookie lives in Cloudflare — just show connected status based on proxy availability
+  setCookieStatus('warn', 'Cookie managed in Cloudflare Worker');
 }
 
 async function testCookie() {
@@ -1123,26 +1111,15 @@ async function testCookie() {
   }
 }
 
-function updateCookieStatus(justSaved = false) {
-  const stored = localStorage.getItem('pella_cookie');
-  if (stored && stored.includes('PELLAPRODUCT')) {
-    setCookieStatus('ok', justSaved ? 'Cookie saved and active' : 'Custom cookie loaded');
-  } else if (PELLA_COOKIE && PELLA_COOKIE.includes('PELLAPRODUCT')) {
-    setCookieStatus('warn', 'Using built-in cookie — may expire');
-  } else {
-    setCookieStatus('err', 'No cookie — paste one to enable live pricing');
-  }
+function getActiveCookie() {
+  return window.activeCookie || localStorage.getItem('pella_cookie') || PELLA_COOKIE;
 }
 
 function setCookieStatus(type, text) {
   const dot = document.getElementById('cookie-status-dot');
   const label = document.getElementById('cookie-status-text');
-  dot.className = `status-dot ${type}`;
-  label.textContent = text;
-}
-
-function getActiveCookie() {
-  return window.activeCookie || localStorage.getItem('pella_cookie') || PELLA_COOKIE;
+  if (dot) dot.className = `status-dot ${type}`;
+  if (label) label.textContent = text;
 }
 
 function showOverlay(text = 'Working...') {
