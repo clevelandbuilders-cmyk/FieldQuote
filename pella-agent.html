@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>M&P Quoting Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0c0b09;--dark:#141210;--card:#1c1a16;--border:#2e2b24;
+  --gold:#c9a84c;--gold-dim:#7a6428;--gold-bg:#1a1608;
+  --white:#f0ece2;--muted:#6b6458;--green:#5aad7a;--red:#cf6679;
+}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+
+/* ── SCREENS ── */
+.screen{display:none;position:fixed;inset:0;flex-direction:column}
+.screen.active{display:flex}
+
+/* ── HOME ── */
+#s-home{background:var(--bg);align-items:center;justify-content:center;padding:32px 24px}
+.home-logo{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+.home-title{font-size:32px;font-weight:600;color:var(--white);text-align:center;margin-bottom:8px;line-height:1.15}
+.home-sub{font-size:15px;color:var(--muted);text-align:center;margin-bottom:48px;line-height:1.5}
+.home-fields{width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.field-group{display:flex;flex-direction:column;gap:6px}
+.field-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace}
+.field-input{background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:16px;padding:14px 16px;outline:none;width:100%}
+.field-input:focus{border-color:var(--gold)}
+.btn-start{background:var(--gold);border:none;border-radius:14px;color:var(--bg);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;padding:18px;width:100%;max-width:400px;cursor:pointer}
+
+/* ── CHAT AGENT ── */
+#s-agent{background:var(--bg)}
+.agent-header{background:var(--dark);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.agent-info{display:flex;flex-direction:column}
+.agent-name{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:.15em;text-transform:uppercase}
+.agent-customer{font-size:13px;color:var(--muted)}
+.agent-count{background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:8px;padding:6px 12px;text-align:center}
+.agent-count-num{font-family:'DM Mono',monospace;font-size:18px;color:var(--gold);font-weight:500;line-height:1}
+.agent-count-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* Chat messages */
+.chat-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:85%;display:flex;flex-direction:column;gap:4px}
+.msg.agent{align-self:flex-start}
+.msg.user{align-self:flex-end}
+.msg-bubble{padding:12px 16px;border-radius:16px;font-size:15px;line-height:1.45}
+.msg.agent .msg-bubble{background:var(--card);border:1px solid var(--border);color:var(--white);border-bottom-left-radius:4px}
+.msg.user .msg-bubble{background:var(--gold-bg);border:1px solid var(--gold-dim);color:var(--gold);border-bottom-right-radius:4px}
+.msg-time{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+.msg.user .msg-time{text-align:right}
+
+/* Choices */
+.choices{display:flex;flex-direction:column;gap:8px;margin-top:4px;max-width:85%}
+.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;width:100%}
+.choice-btn:active{background:var(--gold-bg);border-color:var(--gold-dim)}
+.choice-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:6px;padding:2px 7px;flex-shrink:0}
+
+/* Input bar */
+.input-bar{background:var(--dark);border-top:1px solid var(--border);padding:12px 14px;display:flex;gap:10px;align-items:flex-end;flex-shrink:0}
+.text-input{background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:16px;padding:12px 14px;flex:1;outline:none;resize:none;min-height:46px;max-height:100px}
+.text-input:focus{border-color:var(--gold)}
+.mic-btn{width:48px;height:48px;border-radius:50%;border:none;background:var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+.mic-btn.listening{background:var(--red);animation:pulse 1s ease-in-out infinite}
+.mic-btn svg{width:20px;height:20px;fill:var(--bg)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(207,102,121,.5)}50%{box-shadow:0 0 0 10px rgba(207,102,121,0)}}
+.send-btn{width:48px;height:48px;border-radius:50%;border:none;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.send-btn svg{width:18px;height:18px;fill:var(--white)}
+
+/* Typing indicator */
+.typing{display:flex;gap:4px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:16px;border-bottom-left-radius:4px;width:fit-content}
+.typing span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:bounce .9s ease-in-out infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* ── QUOTE REVIEW ── */
+#s-quote{background:var(--bg)}
+.quote-header{background:var(--dark);border-bottom:1px solid var(--border);padding:14px 18px;flex-shrink:0}
+.quote-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.quote-title{font-size:17px;font-weight:600;color:var(--white)}
+.btn-back-sm{background:none;border:none;color:var(--gold);font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.quote-total-bar{background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.qt-label{font-size:12px;color:var(--muted)}
+.qt-amount{font-family:'DM Mono',monospace;font-size:24px;color:var(--gold);font-weight:500}
+.quote-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:10px}
+.line-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.line-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.line-name{font-size:14px;font-weight:500;color:var(--white);flex:1;padding-right:10px}
+.line-price{font-family:'DM Mono',monospace;font-size:16px;color:var(--gold);font-weight:500;flex-shrink:0}
+.line-meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.line-tag{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+.line-specs{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.6;display:none}
+.line-card.expanded .line-specs{display:block}
+.line-actions{display:flex;gap:6px;margin-top:8px}
+.btn-del{background:none;border:1px solid var(--border);border-radius:8px;color:var(--red);font-size:12px;padding:5px 10px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-expand{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;padding:5px 10px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.quote-actions{padding:16px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;background:var(--dark);border-top:1px solid var(--border)}
+.btn-add-more{background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;padding:15px;cursor:pointer;width:100%}
+.btn-export{background:var(--gold);border:none;border-radius:12px;color:var(--bg);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;padding:16px;cursor:pointer;width:100%}
+
+/* ── LOADING ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(12,11,9,.88);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.overlay.show{display:flex}
+.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.overlay-text{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+
+/* ── TOAST ── */
+.toast{display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a3a1a;border:1px solid #3a7a3a;border-radius:10px;padding:12px 20px;font-size:13px;color:var(--green);z-index:1000;white-space:nowrap}
+.toast.err{background:#3a1a1a;border-color:#7a3030;color:var(--red)}
+.toast.show{display:block}
+
+/* ── SETTINGS ── */
+#s-settings{background:var(--bg)}
+.settings-header{background:var(--dark);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.settings-title{font-size:17px;font-weight:600;color:var(--white)}
+.settings-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px}
+.settings-section{margin-bottom:28px}
+.settings-section-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-dim);text-transform:uppercase;letter-spacing:.2em;margin-bottom:12px}
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}
+.settings-card-title{font-size:14px;font-weight:500;color:var(--white);margin-bottom:4px}
+.settings-card-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.cookie-status{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-dot.ok{background:var(--green)}
+.status-dot.warn{background:#c9a84c}
+.status-dot.err{background:var(--red)}
+.status-text{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+.cookie-textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--white);font-family:'DM Mono',monospace;font-size:11px;padding:12px;width:100%;height:120px;outline:none;resize:none;line-height:1.5}
+.cookie-textarea:focus{border-color:var(--gold)}
+.btn-save-cookie{background:var(--gold);border:none;border-radius:10px;color:var(--bg);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;padding:13px;cursor:pointer;width:100%;margin-top:10px}
+.btn-test-cookie{background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px;cursor:pointer;width:100%;margin-top:8px}
+.instructions-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.instructions-list li{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.5}
+.step-num{background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:6px;color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;padding:2px 8px;flex-shrink:0;margin-top:1px}
+.settings-gear{font-size:18px;cursor:pointer;padding:4px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay"><div class="spinner"></div><div class="overlay-text" id="overlay-text">Working...</div></div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════
+     HOME — Customer Info
+═══════════════════════════════ -->
+<div class="screen active" id="s-home">
+  <div style="width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center">
+    <div class="home-logo">M&P Carpentry</div>
+    <div class="home-title">Pella<br>Quoting Agent</div>
+    <div class="home-sub">Voice-driven window &amp; door configurator with live trade pricing</div>
+    <div class="home-fields">
+      <div class="field-group">
+        <div class="field-label">Customer First Name</div>
+        <input class="field-input" id="f-first" placeholder="Benjamin" type="text" autocomplete="given-name">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Customer Last Name</div>
+        <input class="field-input" id="f-last" placeholder="Van Horn" type="text" autocomplete="family-name">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Street Address</div>
+        <input class="field-input" id="f-addr" placeholder="1077 N Perry Ct" type="text" autocomplete="street-address">
+      </div>
+      <div class="field-group">
+        <div class="field-label">City</div>
+        <input class="field-input" id="f-city" placeholder="Milwaukee" type="text" autocomplete="address-level2">
+      </div>
+      <div class="field-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div class="field-label">State</div>
+          <input class="field-input" id="f-state" placeholder="WI" maxlength="2" type="text" autocomplete="address-level1">
+        </div>
+        <div>
+          <div class="field-label">ZIP</div>
+          <input class="field-input" id="f-zip" placeholder="53213" type="text" inputmode="numeric" autocomplete="postal-code">
+        </div>
+      </div>
+    </div>
+    <button class="btn-start" onclick="startSession()">Start Quoting →</button>
+    <div style="margin-top:16px"><span class="settings-gear" onclick="showSettings()" style="font-size:22px">⚙️ Settings</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SETTINGS
+═══════════════════════════════ -->
+<div class="screen" id="s-settings">
+  <div class="settings-header">
+    <button class="btn-back-sm" id="settings-back-btn" onclick="settingsBack()">← Back</button>
+    <div class="settings-title">Settings</div>
+    <div style="width:50px"></div>
+  </div>
+  <div class="settings-scroll">
+
+    <div class="settings-section">
+      <div class="settings-section-label">Pella API Session</div>
+      <div class="settings-card">
+        <div class="settings-card-title">Session Cookie</div>
+        <div class="settings-card-desc">The app uses your Pella session cookie to fetch live trade pricing. Cookies expire periodically — refresh them here when pricing stops working.</div>
+        <div class="cookie-status">
+          <div class="status-dot" id="cookie-status-dot"></div>
+          <div class="status-text" id="cookie-status-text">Checking...</div>
+        </div>
+        <textarea class="cookie-textarea" id="cookie-input" placeholder="Paste your full cookie string here..."></textarea>
+        <button class="btn-save-cookie" onclick="saveCookie()">Save Cookie</button>
+        <button class="btn-test-cookie" onclick="testCookie()">Test Connection</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-label">How to Get a Fresh Cookie</div>
+      <div class="settings-card">
+        <ul class="instructions-list">
+          <li><span class="step-num">1</span>Open PellaPro on your Mac in Chrome and log in</li>
+          <li><span class="step-num">2</span>Press <b style="color:var(--white)">Command + Option + I</b> to open DevTools</li>
+          <li><span class="step-num">3</span>Click the <b style="color:var(--white)">Network</b> tab, then filter by <b style="color:var(--white)">Fetch/XHR</b></li>
+          <li><span class="step-num">4</span>Start configuring any window in the portal to trigger an API call</li>
+          <li><span class="step-num">5</span>Click any <b style="color:var(--white)">api.pella.com</b> request in the list</li>
+          <li><span class="step-num">6</span>Click <b style="color:var(--white)">Headers</b> → scroll to <b style="color:var(--white)">Request Headers</b></li>
+          <li><span class="step-num">7</span>Find the <b style="color:var(--white)">cookie:</b> row — copy the entire value</li>
+          <li><span class="step-num">8</span>Paste it above and tap Save Cookie</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-label">Google Sheets</div>
+      <div class="settings-card">
+        <div class="settings-card-title">Master Estimator</div>
+        <div class="settings-card-desc">Exports go to your Extended sheet. Data maps to columns A–E: Product, Description, Location, Product Cost, Quantity.</div>
+        <a href="https://docs.google.com/spreadsheets/d/14xZpYlsykIsrO_kkuBV4mGZpcqE_UOxoDY_W_DIQkto/edit#gid=1183060" target="_blank" style="display:block;background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:10px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:13px 16px;text-align:center;text-decoration:none;margin-top:4px">Open Master Estimator →</a>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-label">App Info</div>
+      <div class="settings-card" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="settings-card-title">M&P Pella Agent</div>
+          <div style="font-size:12px;color:var(--muted)">Meat and Potatoes Carpentry LLC</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold-dim)">v1.0</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     AGENT — Voice Chat
+═══════════════════════════════ -->
+<div class="screen" id="s-agent">
+  <div class="agent-header">
+    <div class="agent-info">
+      <div class="agent-name">M&P // Pella Agent</div>
+      <div class="agent-customer" id="agent-customer-name">Customer</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button onclick="showQuote()" style="background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:13px;padding:8px 12px;cursor:pointer;font-family:'DM Sans',sans-serif">View Quote</button>
+      <span class="settings-gear" onclick="showSettings()">⚙️</span>
+      <div class="agent-count">
+        <div class="agent-count-num" id="item-count">0</div>
+        <div class="agent-count-lbl">Items</div>
+      </div>
+    </div>
+  </div>
+  <div class="chat-scroll" id="chat-scroll"></div>
+  <div class="input-bar">
+    <textarea class="text-input" id="text-input" placeholder="Type or tap mic to speak..." rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+    <button class="mic-btn" id="mic-btn" onclick="toggleMic()">
+      <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+    </button>
+    <button class="send-btn" onclick="sendText()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     QUOTE — Review & Export
+═══════════════════════════════ -->
+<div class="screen" id="s-quote">
+  <div class="quote-header">
+    <div class="quote-header-row">
+      <div class="quote-title" id="quote-customer-title">Quote</div>
+      <button class="btn-back-sm" onclick="showAgent()">← Back</button>
+    </div>
+    <div class="quote-total-bar">
+      <div>
+        <div class="qt-label">Total Trade Cost</div>
+        <div class="qt-amount" id="quote-total">$0.00</div>
+      </div>
+      <div style="text-align:right">
+        <div class="qt-label">Items</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;color:var(--white)" id="quote-item-count">0</div>
+      </div>
+    </div>
+  </div>
+  <div class="quote-scroll" id="quote-list"></div>
+  <div class="quote-actions">
+    <button class="btn-add-more" onclick="showAgent()">+ Add More Items</button>
+    <button class="btn-export" onclick="exportToSheets()">Export to Google Sheets →</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
+const SHEET_ID = '14xZpYlsykIsrO_kkuBV4mGZpcqE_UOxoDY_W_DIQkto';
+const PELLA_COOKIE = 'mt.v=2.1975296017.1744152656367; ELOQUA=GUID=E25C60A2AE0449C2BB169A6C43651F18; _ga=GA1.1.1117814212.1744152661; FPID=FPID2.2.AUuoB%2BKAMm76alWRP7t21EPZ3hz9QS5EeeZhOWBwYTw%3D.1744152661; _svsid=4d1ddd7501fa850d2a30eae3388960c5; _lc2_fpi=8a8f66a488a3--01jrbsk76zxv0rcdmy4er5v0b3; __adroll_fpc=53ab0cbf778380003286f3d7656b3cd0-1744152670071; _pin_unauth=dWlkPVlqY3paR0UzWmpBdFpESXpOaTAwTm1WbUxXRTJZbUl0WldVek1HUXhPR0UyWkdFMg; _li_ss=CgA; OptanonAlertBoxClosed=2025-05-27T02:19:26.994Z; PELLAPRODUCT=s%3AVfaqy3Pc1Wqc63bUNy8h6jDp57cUomn9.IDcvifSfADhoF7LAQroGgMVZOu890Pj7PKNi%2BQavz2Y; _ga_N0X49FMHX1=GS2.1.s1776308005$o4$g1$t1776309251$j51$l0$h0';
+
+const PRODUCTS = {
+  // Lifestyle Series
+  'lifestyle-series-1-wide-casement': {name:'Lifestyle Series Casement', type:'window'},
+  'lifestyle-series-2-wide-casement': {name:'Lifestyle Series 2-Wide Casement', type:'window'},
+  'lifestyle-series-3-wide-casement': {name:'Lifestyle Series 3-Wide Casement', type:'window'},
+  'lifestyle-series-1-wide-dhung': {name:'Lifestyle Series Double-Hung', type:'window'},
+  'lifestyle-series-2-wide-dhung': {name:'Lifestyle Series 2-Wide Double-Hung', type:'window'},
+  'lifestyle-series-3-wide-dhung': {name:'Lifestyle Series 3-Wide Double-Hung', type:'window'},
+  'lifestyle-series-1-wide-awning': {name:'Lifestyle Series Awning', type:'window'},
+  'lifestyle-series-1-wide-fixed-rectangle': {name:'Lifestyle Series Picture Window', type:'window'},
+  'lifestyle-1-wide-double-sliding-door': {name:'Lifestyle Series 2-Panel Sliding Door', type:'patio-door'},
+  'lifestyle-1-wide-triple-sliding-door': {name:'Lifestyle Series 3-Panel Sliding Door', type:'patio-door'},
+  'lifestyle-1-wide-quad-sliding-door': {name:'Lifestyle Series 4-Panel Sliding Door', type:'patio-door'},
+  'lifestyle-1-wide-single-hinged-door': {name:'Lifestyle Series Hinged Door', type:'patio-door'},
+  'lifestyle-1-wide-double-hinged-door': {name:'Lifestyle Series Double Hinged Door', type:'patio-door'},
+  // Impervia
+  'Impervia-1-wide-casement': {name:'Impervia Casement', type:'window'},
+  'Impervia-2-wide-casement': {name:'Impervia 2-Wide Casement', type:'window'},
+  'Impervia-3-wide-casement': {name:'Impervia 3-Wide Casement', type:'window'},
+  'Impervia-1-wide-dhung': {name:'Impervia Double-Hung', type:'window'},
+  'Impervia-2-wide-dhung': {name:'Impervia 2-Wide Double-Hung', type:'window'},
+  'Impervia-3-wide-dhung': {name:'Impervia 3-Wide Double-Hung', type:'window'},
+  'Impervia-1-wide-shung': {name:'Impervia Single-Hung', type:'window'},
+  'Impervia-2-wide-shung': {name:'Impervia 2-Wide Single-Hung', type:'window'},
+  'Impervia-3-wide-shung': {name:'Impervia 3-Wide Single-Hung', type:'window'},
+  'Impervia-1-wide-awning': {name:'Impervia Awning', type:'window'},
+  'Impervia-1-wide-sliding-window': {name:'Impervia Sliding Window', type:'window'},
+  'Impervia-series-1-wide-fixed-rectangle': {name:'Impervia Picture Window', type:'window'},
+  'Impervia-1-wide-double-sliding-door': {name:'Impervia 2-Panel Sliding Door', type:'patio-door'},
+  // 250 Series
+  '250-1-wide-casement': {name:'250 Series Casement', type:'window'},
+  '250-2-wide-casement': {name:'250 Series 2-Wide Casement', type:'window'},
+  '250-3-wide-casement': {name:'250 Series 3-Wide Casement', type:'window'},
+  '250-1-wide-dhung': {name:'250 Series Double-Hung', type:'window'},
+  '250-2-wide-dhung': {name:'250 Series 2-Wide Double-Hung', type:'window'},
+  '250-3-wide-dhung': {name:'250 Series 3-Wide Double-Hung', type:'window'},
+  '250-1-wide-shung': {name:'250 Series Single-Hung', type:'window'},
+  '250-2-wide-shung': {name:'250 Series 2-Wide Single-Hung', type:'window'},
+  '250-3-wide-shung': {name:'250 Series 3-Wide Single-Hung', type:'window'},
+  '250-1-wide-awning': {name:'250 Series Awning', type:'window'},
+  '250-1-wide-sliding-window': {name:'250 Series Sliding Window', type:'window'},
+  '250-1-wide-fixed-rectangle': {name:'250 Series Picture Window', type:'window'},
+  '250-1-wide-double-sliding-door': {name:'250 Series 2-Panel Sliding Door', type:'patio-door'},
+};
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let customer = {};
+let quoteItems = [];
+let currentConfig = {};
+let conversationState = 'idle'; // idle | series | type | dimensions | questions | location | qty | confirm
+let currentQuestions = [];
+let currentQIdx = 0;
+let currentAnswers = {};
+let currentProductId = null;
+let currentQuoteId = null;
+let recognition = null;
+let isListening = false;
+let synth = window.speechSynthesis;
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+function startSession() {
+  const first = document.getElementById('f-first').value.trim();
+  const last = document.getElementById('f-last').value.trim();
+  if (!first || !last) { showToast('Please enter customer name', true); return; }
+  customer = {
+    first, last,
+    address: document.getElementById('f-addr').value.trim(),
+    city: document.getElementById('f-city').value.trim(),
+    state: document.getElementById('f-state').value.trim(),
+    zip: document.getElementById('f-zip').value.trim(),
+  };
+  document.getElementById('agent-customer-name').textContent = `${first} ${last}`;
+  document.getElementById('quote-customer-title').textContent = `Quote — ${first} ${last}`;
+  showScreen('s-agent');
+  setTimeout(() => {
+    agentSay(`Hi! I'm ready to build a quote for ${first} ${last}. What series are we quoting — Lifestyle, 250 Series, or Impervia?`, ['Lifestyle Series', '250 Series', 'Impervia']);
+    conversationState = 'series';
+  }, 400);
+}
+
+// ══════════════════════════════════════════════════════
+// CONVERSATION ENGINE
+// ══════════════════════════════════════════════════════
+async function handleInput(input) {
+  addUserMsg(input);
+  const val = input.toLowerCase().trim();
+
+  if (conversationState === 'series') {
+    handleSeriesInput(val);
+  } else if (conversationState === 'type') {
+    handleTypeInput(val);
+  } else if (conversationState === 'width') {
+    handleDimension(val, 'width');
+  } else if (conversationState === 'height') {
+    handleDimension(val, 'height');
+  } else if (conversationState === 'questions') {
+    handleQuestionAnswer(val);
+  } else if (conversationState === 'location') {
+    handleLocation(val);
+  } else if (conversationState === 'qty') {
+    handleQty(val);
+  } else if (conversationState === 'confirm') {
+    handleConfirm(val);
+  } else if (conversationState === 'another') {
+    handleAnother(val);
+  }
+}
+
+function handleSeriesInput(val) {
+  let series = null;
+  if (val.includes('lifestyle') || val.includes('life') || val === '1') series = 'lifestyle';
+  else if (val.includes('250') || val.includes('two fifty') || val === '2') series = '250';
+  else if (val.includes('impervia') || val.includes('imper') || val === '3') series = 'impervia';
+
+  if (!series) {
+    agentSay("I didn't catch that. Which series — Lifestyle, 250 Series, or Impervia?", ['Lifestyle Series', '250 Series', 'Impervia']);
+    return;
+  }
+  currentConfig.series = series;
+
+  const types = getTypesForSeries(series);
+  agentSay(`Got it — ${seriesLabel(series)}. What type of window or door?`, types.map(t => t.label));
+  conversationState = 'type';
+}
+
+function handleTypeInput(val) {
+  const types = getTypesForSeries(currentConfig.series);
+  let match = null;
+  for (const t of types) {
+    if (val.includes(t.keywords[0]) || (t.keywords[1] && val.includes(t.keywords[1]))) {
+      match = t; break;
+    }
+  }
+  // also match by number
+  const num = parseInt(val);
+  if (!match && num >= 1 && num <= types.length) match = types[num - 1];
+
+  if (!match) {
+    agentSay("Which type?", types.map(t => t.label));
+    return;
+  }
+  currentConfig.type = match;
+  currentProductId = match.id;
+  agentSay(`${match.label} — what's the frame width in inches?`);
+  conversationState = 'width';
+}
+
+function handleDimension(val, dim) {
+  const num = parseFloat(val.replace(/[^0-9.]/g, ''));
+  if (isNaN(num) || num < 8 || num > 300) {
+    agentSay(`I need a valid measurement in inches. What's the frame ${dim}?`);
+    return;
+  }
+  currentAnswers[dim] = num;
+  if (dim === 'width') {
+    agentSay(`Width is ${num} inches. And the frame height?`);
+    conversationState = 'height';
+  } else {
+    agentSay(`Height is ${num} inches. Let me load the configuration options...`);
+    loadProductConfig();
+  }
+}
+
+async function loadProductConfig() {
+  showOverlay('Loading product options...');
+  try {
+    // Create a quote first to get quoteId
+    const quoteId = currentQuoteId || await createQuote();
+    currentQuoteId = quoteId;
+
+    const resp = await fetch(`https://api.pella.com/web-product/api/v2/web/products/${currentProductId}?quoteId=${quoteId}`, {
+      credentials: 'include',
+      headers: { 'Cookie': getActiveCookie() }
+    });
+    const data = await resp.json();
+    hideOverlay();
+
+    if (data && data.questions) {
+      // Filter to meaningful questions only (skip locked/single-option)
+      currentQuestions = data.questions.filter(q =>
+        !q.locked &&
+        q.type !== 'FreeEntry' &&
+        q.answers && q.answers.length > 1 &&
+        !['High Altitude', 'Sensor Option', 'Screen Cloth'].includes(q.question_text)
+      );
+      currentQIdx = 0;
+      conversationState = 'questions';
+      askCurrentQuestion();
+    } else {
+      // Fall back to manual question flow
+      fallbackQuestions();
+    }
+  } catch(e) {
+    hideOverlay();
+    fallbackQuestions();
+  }
+}
+
+function askCurrentQuestion() {
+  if (currentQIdx >= currentQuestions.length) {
+    // All questions answered — fetch price
+    fetchPrice();
+    return;
+  }
+  const q = currentQuestions[currentQIdx];
+  const opts = q.answers.map(a => a.text);
+  agentSay(q.question_text + '?', opts);
+}
+
+function handleQuestionAnswer(val) {
+  const q = currentQuestions[currentQIdx];
+  const opts = q.answers;
+  let match = null;
+
+  // Try to match by text
+  for (const a of opts) {
+    if (val.includes(a.text.toLowerCase())) { match = a; break; }
+  }
+  // Match by number
+  const num = parseInt(val);
+  if (!match && num >= 1 && num <= opts.length) match = opts[num - 1];
+  // Match by partial
+  if (!match) {
+    for (const a of opts) {
+      const words = a.text.toLowerCase().split(' ');
+      if (words.some(w => w.length > 3 && val.includes(w))) { match = a; break; }
+    }
+  }
+
+  if (!match) {
+    agentSay(`Please choose one of the options for ${q.question_text}:`, opts.map(a => a.text));
+    return;
+  }
+
+  currentAnswers[q.question_text] = match.text;
+  currentQIdx++;
+  askCurrentQuestion();
+}
+
+async function fetchPrice() {
+  showOverlay('Getting your trade price...');
+  try {
+    const quoteId = currentQuoteId;
+    // Build dimensions into the API call
+    const w = currentAnswers.width;
+    const h = currentAnswers.height;
+
+    // PUT width
+    await putAnswer(quoteId, currentProductId, 'f6106e9c-8db7-45b3-bad7-19eb9afdcc07', String(w), 'WindowDimension');
+    // PUT height
+    const heightResp = await putAnswer(quoteId, currentProductId, '18007c29-b11e-4bf7-8ba0-72c3da3b59b7', String(h), 'WindowDimension');
+
+    let price = null;
+    let retailPrice = null;
+    if (heightResp && heightResp.price) {
+      price = heightResp.price.amount / 100;
+      retailPrice = heightResp.price_comparison ? heightResp.price_comparison.amount / 100 : null;
+    }
+
+    hideOverlay();
+
+    if (price) {
+      currentConfig.price = price;
+      currentConfig.retailPrice = retailPrice;
+      const formatted = '$' + price.toFixed(2);
+      agentSay(`Your trade price is ${formatted}. What room or location is this for?`);
+      conversationState = 'location';
+    } else {
+      agentSay(`I got your selections. What room or location is this window for?`);
+      conversationState = 'location';
+    }
+  } catch(e) {
+    hideOverlay();
+    agentSay(`What room or location is this window for?`);
+    conversationState = 'location';
+  }
+}
+
+function handleLocation(val) {
+  currentConfig.location = val.trim();
+  agentSay(`Got it — ${val}. How many of this window?`, ['1', '2', '3', '4', 'Other']);
+  conversationState = 'qty';
+}
+
+function handleQty(val) {
+  const num = parseInt(val.replace(/[^0-9]/g, ''));
+  if (isNaN(num) || num < 1) {
+    agentSay('How many of this window?', ['1', '2', '3', '4']);
+    return;
+  }
+  currentConfig.qty = num;
+
+  const priceStr = currentConfig.price ? `$${currentConfig.price.toFixed(2)} each` : 'price pending';
+  const total = currentConfig.price ? `$${(currentConfig.price * num).toFixed(2)}` : '';
+
+  agentSay(
+    `Adding ${num}x ${currentConfig.type.label} — ${currentConfig.location} — ${priceStr}${total ? ` (${total} total)` : ''}. Add this to the quote?`,
+    ['Yes, add it', 'No, redo']
+  );
+  conversationState = 'confirm';
+}
+
+function handleConfirm(val) {
+  if (val.includes('yes') || val.includes('add') || val.includes('1') || val.includes('yeah') || val.includes('yep')) {
+    addLineItem();
+    agentSay(
+      `Added! Quote now has ${quoteItems.length} item${quoteItems.length > 1 ? 's' : ''}. Add another window or door?`,
+      ['Yes, add another', 'No, view quote']
+    );
+    conversationState = 'another';
+  } else {
+    resetConfig();
+    agentSay("No problem. What series are we quoting — Lifestyle, 250 Series, or Impervia?", ['Lifestyle Series', '250 Series', 'Impervia']);
+    conversationState = 'series';
+  }
+}
+
+function handleAnother(val) {
+  if (val.includes('yes') || val.includes('another') || val.includes('add') || val.includes('1') || val.includes('yeah')) {
+    resetConfig();
+    agentSay("What series — Lifestyle, 250 Series, or Impervia?", ['Lifestyle Series', '250 Series', 'Impervia']);
+    conversationState = 'series';
+  } else {
+    showQuote();
+  }
+}
+
+function addLineItem() {
+  quoteItems.push({
+    id: Date.now(),
+    productId: currentProductId,
+    name: `Pella® ${currentConfig.type.label}`,
+    location: currentConfig.location,
+    price: currentConfig.price || 0,
+    retailPrice: currentConfig.retailPrice || 0,
+    qty: currentConfig.qty || 1,
+    answers: {...currentAnswers},
+    width: currentAnswers.width,
+    height: currentAnswers.height,
+  });
+  document.getElementById('item-count').textContent = quoteItems.length;
+  updateQuoteTotal();
+}
+
+function resetConfig() {
+  currentConfig = {};
+  currentAnswers = {};
+  currentQuestions = [];
+  currentQIdx = 0;
+  currentProductId = null;
+}
+
+// ══════════════════════════════════════════════════════
+// PELLA API
+// ══════════════════════════════════════════════════════
+async function createQuote() {
+  const resp = await fetch('https://pellapro.pella.com/api/quotes', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {'Content-Type':'application/json', 'Cookie': getActiveCookie()},
+    body: JSON.stringify({
+      quoteName: `M&P - ${customer.first} ${customer.last}`,
+      firstName: customer.first,
+      lastName: customer.last,
+      streetAddress: customer.address || '123 Main St',
+      city: customer.city || 'Milwaukee',
+      state: customer.state || 'WI',
+      postalCode: customer.zip || '53000',
+    })
+  });
+  const data = await resp.json();
+  return data.id || data.quoteId;
+}
+
+async function putAnswer(quoteId, productId, questionId, answerId, classification) {
+  const resp = await fetch(`https://api.pella.com/web-product/api/v2/web/config/${productId}/questions/${questionId}?quoteId=${quoteId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {'Content-Type':'application/json', 'Cookie': getActiveCookie()},
+    body: JSON.stringify({
+      selected_answer_id: answerId,
+      question_classification: classification,
+      unit_index: 0,
+      using_different_answers: false,
+    })
+  });
+  return await resp.json();
+}
+
+// ══════════════════════════════════════════════════════
+// FALLBACK — manual question flow if API fails
+// ══════════════════════════════════════════════════════
+function fallbackQuestions() {
+  currentQuestions = [
+    { question_text: 'Exterior Color', answers: [{text:'White'},{text:'Black'},{text:'Brown'},{text:'Putty'},{text:'Tan'},{text:'Iron Ore'},{text:'Champagne'},{text:'Fossil'}] },
+    { question_text: 'Interior Finish', answers: [{text:'Unfinished'},{text:'Primed'},{text:'Prefinished White Paint'},{text:'Natural Stain'},{text:'Golden Oak Stain'}] },
+    { question_text: 'Low-E Glass Style', answers: [{text:'Advanced Low-E Insulating Glass'},{text:'AdvancedComfort Low-E Insulating Glass'},{text:'SunDefense™ Low-E Insulating Glass'}] },
+    { question_text: 'Hardware Finish', answers: [{text:'White'},{text:'Champagne'},{text:'Brown'},{text:'Matte Black'},{text:'Satin Nickel'},{text:'Satin Brass'}] },
+    { question_text: 'Installation Method', answers: [{text:'New Construction'},{text:'Replacement'}] },
+    { question_text: 'Jamb Extended Wall Depth', answers: [{text:'3-11/16"'},{text:'4-9/16"'},{text:'6-9/16"'}] },
+    { question_text: 'Screen Option', answers: [{text:'Full Screen'},{text:'No Screen'}] },
+    { question_text: 'Grille Type', answers: [{text:'No Grille'},{text:'Grilles-Between-The-Glass'}] },
+  ];
+  currentQIdx = 0;
+  conversationState = 'questions';
+  askCurrentQuestion();
+}
+
+// ══════════════════════════════════════════════════════
+// PRODUCT CATALOG HELPERS
+// ══════════════════════════════════════════════════════
+function getTypesForSeries(series) {
+  const all = [
+    { id:'lifestyle-series-1-wide-casement', label:'Casement', series:'lifestyle', keywords:['casement','case'] },
+    { id:'lifestyle-series-2-wide-casement', label:'2-Wide Casement', series:'lifestyle', keywords:['2-wide casement','2 wide','two wide casement'] },
+    { id:'lifestyle-series-3-wide-casement', label:'3-Wide Casement', series:'lifestyle', keywords:['3-wide casement','3 wide','three wide casement'] },
+    { id:'lifestyle-series-1-wide-dhung', label:'Double-Hung', series:'lifestyle', keywords:['double','double hung','dhung'] },
+    { id:'lifestyle-series-2-wide-dhung', label:'2-Wide Double-Hung', series:'lifestyle', keywords:['2-wide double','2 wide double','two wide double'] },
+    { id:'lifestyle-series-3-wide-dhung', label:'3-Wide Double-Hung', series:'lifestyle', keywords:['3-wide double','3 wide double','three wide double'] },
+    { id:'lifestyle-series-1-wide-awning', label:'Awning', series:'lifestyle', keywords:['awning'] },
+    { id:'lifestyle-series-1-wide-fixed-rectangle', label:'Picture Window', series:'lifestyle', keywords:['picture','fixed'] },
+    { id:'lifestyle-1-wide-double-sliding-door', label:'2-Panel Sliding Door', series:'lifestyle', keywords:['2 panel','two panel','sliding'] },
+    { id:'lifestyle-1-wide-triple-sliding-door', label:'3-Panel Sliding Door', series:'lifestyle', keywords:['3 panel','three panel','triple sliding'] },
+    { id:'lifestyle-1-wide-quad-sliding-door', label:'4-Panel Sliding Door', series:'lifestyle', keywords:['4 panel','four panel','quad'] },
+    { id:'lifestyle-1-wide-single-hinged-door', label:'Hinged Door', series:'lifestyle', keywords:['hinged door','single hinged'] },
+    { id:'lifestyle-1-wide-double-hinged-door', label:'Double Hinged Door', series:'lifestyle', keywords:['double hinged','french'] },
+    { id:'Impervia-1-wide-casement', label:'Casement', series:'impervia', keywords:['casement'] },
+    { id:'Impervia-2-wide-casement', label:'2-Wide Casement', series:'impervia', keywords:['2-wide casement','2 wide','two wide'] },
+    { id:'Impervia-3-wide-casement', label:'3-Wide Casement', series:'impervia', keywords:['3-wide casement','3 wide','three wide'] },
+    { id:'Impervia-1-wide-dhung', label:'Double-Hung', series:'impervia', keywords:['double','double hung'] },
+    { id:'Impervia-2-wide-dhung', label:'2-Wide Double-Hung', series:'impervia', keywords:['2-wide double','2 wide double'] },
+    { id:'Impervia-3-wide-dhung', label:'3-Wide Double-Hung', series:'impervia', keywords:['3-wide double','3 wide double'] },
+    { id:'Impervia-1-wide-shung', label:'Single-Hung', series:'impervia', keywords:['single hung','single-hung'] },
+    { id:'Impervia-2-wide-shung', label:'2-Wide Single-Hung', series:'impervia', keywords:['2 wide single','2-wide single'] },
+    { id:'Impervia-3-wide-shung', label:'3-Wide Single-Hung', series:'impervia', keywords:['3 wide single','3-wide single'] },
+    { id:'Impervia-1-wide-awning', label:'Awning', series:'impervia', keywords:['awning'] },
+    { id:'Impervia-1-wide-sliding-window', label:'Sliding Window', series:'impervia', keywords:['sliding window'] },
+    { id:'Impervia-series-1-wide-fixed-rectangle', label:'Picture Window', series:'impervia', keywords:['picture','fixed'] },
+    { id:'Impervia-1-wide-double-sliding-door', label:'2-Panel Sliding Door', series:'impervia', keywords:['sliding door','2 panel'] },
+    { id:'250-1-wide-casement', label:'Casement', series:'250', keywords:['casement'] },
+    { id:'250-2-wide-casement', label:'2-Wide Casement', series:'250', keywords:['2-wide casement','2 wide','two wide'] },
+    { id:'250-3-wide-casement', label:'3-Wide Casement', series:'250', keywords:['3-wide casement','3 wide','three wide'] },
+    { id:'250-1-wide-dhung', label:'Double-Hung', series:'250', keywords:['double','double hung'] },
+    { id:'250-2-wide-dhung', label:'2-Wide Double-Hung', series:'250', keywords:['2-wide double','2 wide double'] },
+    { id:'250-3-wide-dhung', label:'3-Wide Double-Hung', series:'250', keywords:['3-wide double','3 wide double'] },
+    { id:'250-1-wide-shung', label:'Single-Hung', series:'250', keywords:['single hung','single-hung'] },
+    { id:'250-2-wide-shung', label:'2-Wide Single-Hung', series:'250', keywords:['2 wide single'] },
+    { id:'250-3-wide-shung', label:'3-Wide Single-Hung', series:'250', keywords:['3 wide single'] },
+    { id:'250-1-wide-awning', label:'Awning', series:'250', keywords:['awning'] },
+    { id:'250-1-wide-sliding-window', label:'Sliding Window', series:'250', keywords:['sliding window'] },
+    { id:'250-1-wide-fixed-rectangle', label:'Picture Window', series:'250', keywords:['picture','fixed'] },
+    { id:'250-1-wide-double-sliding-door', label:'2-Panel Sliding Door', series:'250', keywords:['sliding door','2 panel'] },
+  ];
+  return all.filter(t => t.series === series);
+}
+
+function seriesLabel(s) {
+  return s === 'lifestyle' ? 'Lifestyle Series' : s === '250' ? '250 Series' : 'Impervia';
+}
+
+// ══════════════════════════════════════════════════════
+// CHAT UI
+// ══════════════════════════════════════════════════════
+function agentSay(text, choices = []) {
+  const scroll = document.getElementById('chat-scroll');
+
+  // Add typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  typing.id = 'typing-indicator';
+  scroll.appendChild(typing);
+  scroll.scrollTop = scroll.scrollHeight;
+
+  setTimeout(() => {
+    typing.remove();
+    const msg = document.createElement('div');
+    msg.className = 'msg agent';
+    msg.innerHTML = `<div class="msg-bubble">${text}</div>`;
+    scroll.appendChild(msg);
+
+    if (choices.length > 0) {
+      const choicesDiv = document.createElement('div');
+      choicesDiv.className = 'choices';
+      choices.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerHTML = `<span class="choice-num">${i+1}</span>${c}`;
+        btn.onclick = () => {
+          document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+          handleInput(c);
+        };
+        choicesDiv.appendChild(btn);
+      });
+      scroll.appendChild(choicesDiv);
+    }
+
+    scroll.scrollTop = scroll.scrollHeight;
+    speak(text);
+  }, 600 + Math.random() * 400);
+}
+
+function addUserMsg(text) {
+  const scroll = document.getElementById('chat-scroll');
+  const msg = document.createElement('div');
+  msg.className = 'msg user';
+  msg.innerHTML = `<div class="msg-bubble">${text}</div>`;
+  scroll.appendChild(msg);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════
+// SPEECH
+// ══════════════════════════════════════════════════════
+function speak(text) {
+  if (!synth) return;
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 1.05;
+  utt.pitch = 1;
+  synth.speak(utt);
+}
+
+function toggleMic() {
+  if (isListening) { stopMic(); return; }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { showToast('Speech recognition not available in this browser', true); return; }
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById('text-input').value = transcript;
+    stopMic();
+    handleInput(transcript);
+    document.getElementById('text-input').value = '';
+  };
+  recognition.onerror = () => stopMic();
+  recognition.onend = () => stopMic();
+  recognition.start();
+  isListening = true;
+  document.getElementById('mic-btn').classList.add('listening');
+}
+
+function stopMic() {
+  if (recognition) { try { recognition.stop(); } catch(e){} }
+  isListening = false;
+  document.getElementById('mic-btn').classList.remove('listening');
+}
+
+function sendText() {
+  const input = document.getElementById('text-input');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  input.style.height = '';
+  handleInput(val);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); }
+}
+
+function autoResize(el) {
+  el.style.height = '';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// ══════════════════════════════════════════════════════
+// QUOTE VIEW
+// ══════════════════════════════════════════════════════
+function updateQuoteTotal() {
+  const total = quoteItems.reduce((s, i) => s + (i.price * i.qty), 0);
+  document.getElementById('quote-total').textContent = '$' + total.toFixed(2);
+  document.getElementById('quote-item-count').textContent = quoteItems.length;
+}
+
+function showQuote() {
+  renderQuote();
+  showScreen('s-quote');
+}
+
+function renderQuote() {
+  const list = document.getElementById('quote-list');
+  list.innerHTML = '';
+  updateQuoteTotal();
+  if (quoteItems.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:15px">No items yet</div>';
+    return;
+  }
+  quoteItems.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'line-card';
+    card.id = `line-${item.id}`;
+    const specLines = Object.entries(item.answers)
+      .filter(([k]) => !['width','height'].includes(k))
+      .map(([k,v]) => `<b>${k}:</b> ${v}`).join('<br>');
+    card.innerHTML = `
+      <div class="line-top">
+        <div class="line-name">${item.name}</div>
+        <div class="line-price">$${(item.price * item.qty).toFixed(2)}</div>
+      </div>
+      <div class="line-meta">
+        <span class="line-tag">📍 ${item.location}</span>
+        <span class="line-tag">Qty: ${item.qty}</span>
+        <span class="line-tag">${item.width}" × ${item.height}"</span>
+        ${item.price ? `<span class="line-tag">$${item.price.toFixed(2)} ea.</span>` : ''}
+      </div>
+      <div class="line-actions">
+        <button class="btn-expand" onclick="toggleExpand('line-${item.id}')">Details</button>
+        <button class="btn-del" onclick="removeItem(${item.id})">Remove</button>
+      </div>
+      <div class="line-specs">${specLines}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function toggleExpand(id) {
+  document.getElementById(id).classList.toggle('expanded');
+}
+
+function removeItem(id) {
+  quoteItems = quoteItems.filter(i => i.id !== id);
+  document.getElementById('item-count').textContent = quoteItems.length;
+  renderQuote();
+}
+
+// ══════════════════════════════════════════════════════
+// GOOGLE SHEETS EXPORT
+// ══════════════════════════════════════════════════════
+function exportToSheets() {
+  if (quoteItems.length === 0) { showToast('No items to export', true); return; }
+
+  // Build CSV data matching Extended sheet columns:
+  // A=Product, B=Description, C=Location, D=Product Cost, E=Quantity
+  const rows = quoteItems.map((item, i) => {
+    const desc = `${item.width}" W × ${item.height}" H`;
+    return [
+      `Line # ${i + 1}`,           // A - Product (line number label)
+      item.name,                    // B - Description (product name)
+      item.location,                // C - Location
+      item.price.toFixed(2),        // D - Product Cost
+      item.qty                      // E - Quantity
+    ];
+  });
+
+  // Build a tab-separated text for easy copy-paste fallback
+  const tsv = rows.map(r => r.join('\t')).join('\n');
+
+  // Try to open Google Sheets with data via URL
+  // Since we can't write directly without API key auth, we'll open the sheet
+  // and show the data to copy in
+  const sheetsUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=1183060`;
+
+  // Store data in sessionStorage for the copy panel
+  sessionStorage.setItem('pella_export', JSON.stringify({ rows, customer, date: new Date().toLocaleDateString() }));
+
+  showExportPanel(rows, sheetsUrl, tsv);
+}
+
+function showExportPanel(rows, sheetsUrl, tsv) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(12,11,9,.96);z-index:2000;overflow-y:auto;padding:20px';
+
+  const customerInfo = `${customer.first} ${customer.last}\n${customer.address}\n${customer.city}, ${customer.state} ${customer.zip}`;
+  const total = quoteItems.reduce((s, i) => s + (i.price * i.qty), 0);
+
+  overlay.innerHTML = `
+    <div style="max-width:500px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:.15em;text-transform:uppercase">Export Ready</div>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">×</button>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace">Customer</div>
+        <div style="font-size:15px;color:var(--white);white-space:pre-line">${customerInfo}</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace">Line Items — Paste into Master Estimator (Extended sheet, starting Row 2)</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold-dim);margin-bottom:8px">Col A (Product) | Col B (Description) | Col C (Location) | Col D (Cost) | Col E (Qty)</div>
+        ${rows.map((r,i) => `
+          <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--white)">
+            <div style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-bottom:3px">Row ${i+2}</div>
+            <div>${r[1]}</div>
+            <div style="color:var(--muted);font-size:12px">${r[2]} · $${r[3]} × ${r[4]}</div>
+          </div>
+        `).join('')}
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gold-dim);display:flex;justify-content:space-between">
+          <span style="color:var(--muted);font-size:13px">Total Trade Cost</span>
+          <span style="font-family:'DM Mono',monospace;font-size:18px;color:var(--gold)">$${total.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <button onclick="copyTSV(${JSON.stringify(tsv).replace(/</g,'&lt;')})" style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;padding:15px;cursor:pointer;width:100%;margin-bottom:10px">
+        📋 Copy as Tab-Separated (paste directly into Sheets)
+      </button>
+
+      <a href="${sheetsUrl}" target="_blank" style="display:block;background:var(--gold);border:none;border-radius:12px;color:var(--bg);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;padding:16px;text-align:center;text-decoration:none;margin-bottom:10px">
+        Open Master Estimator →
+      </a>
+
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:15px;padding:14px;cursor:pointer;width:100%">
+        Close
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function copyTSV(tsv) {
+  // Full export with headers
+  const header = 'Product\tDescription\tLocation\tProduct Cost\tQuantity';
+  const rows = quoteItems.map((item, i) => [
+    `Line # ${i + 1}`,
+    item.name,
+    item.location,
+    item.price.toFixed(2),
+    item.qty
+  ].join('\t')).join('\n');
+
+  const full = header + '\n' + rows;
+  navigator.clipboard.writeText(full).then(() => {
+    showToast('Copied! Open Master Estimator → Extended sheet → click cell A2 → Paste');
+  }).catch(() => {
+    showToast('Could not copy automatically — select the text above manually', true);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showAgent() { showScreen('s-agent'); }
+
+// ══════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════
+let settingsOrigin = 's-home'; // track where we came from
+
+function showSettings() {
+  // Remember which screen we came from
+  const active = document.querySelector('.screen.active');
+  settingsOrigin = active ? active.id : 's-home';
+
+  // Load current cookie into textarea
+  const stored = localStorage.getItem('pella_cookie');
+  const cookieInput = document.getElementById('cookie-input');
+  cookieInput.value = stored || PELLA_COOKIE;
+
+  // Show current status
+  updateCookieStatus();
+  showScreen('s-settings');
+}
+
+function settingsBack() {
+  showScreen(settingsOrigin);
+}
+
+function saveCookie() {
+  const val = document.getElementById('cookie-input').value.trim();
+  if (!val) { showToast('Paste a cookie string first', true); return; }
+  if (!val.includes('PELLAPRODUCT') && !val.includes('pella')) {
+    showToast('That doesn\'t look like a Pella cookie — double-check', true); return;
+  }
+  localStorage.setItem('pella_cookie', val);
+  // Update the live variable
+  window.activeCookie = val;
+  updateCookieStatus(true);
+  showToast('Cookie saved — live pricing active');
+}
+
+async function testCookie() {
+  const val = document.getElementById('cookie-input').value.trim() || getActiveCookie();
+  if (!val) { showToast('No cookie to test', true); return; }
+  showOverlay('Testing connection...');
+  try {
+    const resp = await fetch('https://api.pella.com/web-product/api/v2/web/products/lifestyle-series-1-wide-casement?quoteId=test', {
+      credentials: 'include',
+      headers: { 'Cookie': val }
+    });
+    hideOverlay();
+    if (resp.ok || resp.status === 304 || resp.status === 400) {
+      setCookieStatus('ok', 'Connected — live pricing active');
+      showToast('Connection successful!');
+    } else if (resp.status === 401 || resp.status === 403) {
+      setCookieStatus('err', 'Session expired — paste a fresh cookie');
+      showToast('Session expired — get a fresh cookie from PellaPro', true);
+    } else {
+      setCookieStatus('warn', `Status ${resp.status} — may still work`);
+      showToast(`Got status ${resp.status} — try saving and quoting`);
+    }
+  } catch(e) {
+    hideOverlay();
+    setCookieStatus('warn', 'Network error — check connection');
+    showToast('Could not reach Pella API — check your internet', true);
+  }
+}
+
+function updateCookieStatus(justSaved = false) {
+  const stored = localStorage.getItem('pella_cookie');
+  if (stored && stored.includes('PELLAPRODUCT')) {
+    setCookieStatus('ok', justSaved ? 'Cookie saved and active' : 'Custom cookie loaded');
+  } else if (PELLA_COOKIE && PELLA_COOKIE.includes('PELLAPRODUCT')) {
+    setCookieStatus('warn', 'Using built-in cookie — may expire');
+  } else {
+    setCookieStatus('err', 'No cookie — paste one to enable live pricing');
+  }
+}
+
+function setCookieStatus(type, text) {
+  const dot = document.getElementById('cookie-status-dot');
+  const label = document.getElementById('cookie-status-text');
+  dot.className = `status-dot ${type}`;
+  label.textContent = text;
+}
+
+function getActiveCookie() {
+  return window.activeCookie || localStorage.getItem('pella_cookie') || PELLA_COOKIE;
+}
+
+function showOverlay(text = 'Working...') {
+  document.getElementById('overlay-text').textContent = text;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' err' : '');
+  setTimeout(() => t.className = 'toast', 3500);
+}
+</script>
+</body>
+</html>
